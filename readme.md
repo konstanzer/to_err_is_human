@@ -1,6 +1,6 @@
 ## To err is Human, To Predict is Divine
 
-<img src="img/logo.png" width="200"/>
+<img src="img/z.png" width="200"/>
 
 ---
 - [Introduction](#introduction)
