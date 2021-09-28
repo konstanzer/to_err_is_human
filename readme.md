@@ -1,18 +1,18 @@
-## To err is Human, To Predict is Divine
+## Zestimate Errors
 
 <img src="img/z.png" width="200"/>
 
 ---
-- [Introduction](#introduction)
+- [Summary](#introduction)
 - [Data](#data)
 - [Planning pipeline](#planning-pipeline)
 - [Hypotheses](#hypotheses)
 - [Results](#results)
 - [Recommendations](#recommendations)
 
-## Introduction
+## Summary
 
-![](img/1.png)
+According to the 2017 Zillow competition on Kaggle, real estate company Zillow used *millions* machine learning and statistical models and hundreds of features for each property to produce home value estimates with a median error of five percent. In this project, I fail to predict drivers of the Zestimate log error using a combination of clustering algorithms and linear modeling. 
 
 ## Data
 
@@ -22,14 +22,8 @@
 | 'basementsqft'                 |  Finished living area below or partially below ground level                                                            |
 | 'bathroomcnt'                  |  Number of bathrooms in home including fractional bathrooms                                                            |
 | 'bedroomcnt'                   |  Number of bedrooms in home                                                                                            |
-| 'buildingqualitytypeid'        |  Overall assessment of condition of the building from best (lowest) to worst (highest)                                 |
-| 'finishedfloor1squarefeet'     |  Size of the finished living area on the first (entry) floor of the home                                               |
-| 'calculatedfinishedsquarefeet' |  Calculated total finished living area of the home                                                                     |
-| 'finishedsquarefeet6'          | Base unfinished and finished area                                                                                      |
-| 'finishedsquarefeet12'         | Finished living area                                                                                                   |
-| 'finishedsquarefeet13'         | Perimeter  living area                                                                                                 |
-| 'finishedsquarefeet15'         | Total area                                                                                                             |
-| 'finishedsquarefeet50'         |  Size of the finished living area on the first (entry) floor of the home                                               |
+| 'buildingqualitytypeid'        |  Overall assessment of condition of the building from best (lowest) to worst (highest)                                 |                                            |
+| 'calculatedfinishedsquarefeet' |  Calculated total finished living area of the home                                                                     |                                         |
 | 'fips'                         |  Federal Information Processing Standard code -  see https://en.wikipedia.org/wiki/FIPS_county_code  |
 | 'fireplacecnt'                 |  Number of fireplaces in a home (if any)                                                                               |
 | 'garagecarcnt'                 |  Total number of garages on the lot including an attached garage                                                       |  
@@ -44,16 +38,11 @@
 | 'structuretaxvaluedollarcnt'   | The assessed value of the built structure on the parcel                                                                |
 | 'landtaxvaluedollarcnt'        | The assessed value of the land area of the parcel                                                                      |
 | 'taxamount'                    | The total property tax assessed for that assessment year                                                               |
+The target variable is log error, which is the log of the Zestimate minus the log of the actual sale price. It's a clever way to deal with right-skewed, heteroskedastic home values because it makes errors relative to to home value. It also avoid the downfall of using percentage error which favors models with negative errors.
 
 ## Planning pipeline
 
-Step 1: Plan
-
-*Business objective:*
-
-*Project objective:*
-
-Step 2: Acquire
+Step 1: Acquire
 
 If data is in a SQL database, run select * from zillow.2017 via SQL IDE.
 If data is a csv file, use pandas, e.g. pandas.read_csv().
@@ -73,13 +62,12 @@ Analyze: statistically and more generally (Python: statsmodels, numpy, scipy, sc
 
 Step 5: Model
 
-Train on minority oversampled data using SMOTE.
+Create clusters that don't predict logerror and then discard them. Use price per square foot to make a lienar model that mimics the basline model, which is predicting the mean log error . See the noisy predictions that
 
 Models used:
 
 * k-means
-* DBSCAN
-* Hierarchical
+* LinearRegression
 
 ## Hypotheses
 
@@ -99,3 +87,53 @@ Models used:
 
 * I recommend we do better.
 
+
+
+### Deliverables
+1. Git hub repository with analysis and work
+2. Jupyter Notebook detailing analytical process and decisions
+<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
+
+## Data Dictionary
+| Variable     | Description                                       | Datatype |
+|--------------|---------------------------------------------------|----------|
+| parcelid     | unique identifier of parcels                      | int64    |
+| bathroom     | number of bathrooms                               | float64  |
+| bedroom      | number of bedrooms                                | float64  |
+| sqft         | square footage of the building                    | float64  |
+| latitude     | latitude coordinates of the building              | float64  |
+| longitude    | longitude coordinates of the building             | float64  |
+| lotsqft      | square footage of the lot of land of the property | float64  |
+| yearbuilt    | date of construction                              | float64  |
+| taxvalue     | appraised tax value of the property               | float64  |
+| landtaxvalue | tax value of the land                             | float64  |
+| taxamount    | Total amount of tax paid on the property          | float64  |
+| <strong>logerror*</strong>    | log error rate of the Zestimate of the property   | float64  |
+| landusedesc  | The type of property                              | object   |
+| county       | Name of the county the property is located in     | object   |
+    * : Target variable
+<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
+
+## Project Planning
+1. Create a Trello board for project management
+2. Import and explore the dataset
+4. Develop clusters for exploration
+    - Use 3 different combinations of featurescale data with appropriate scaler
+5. Scale data appropriately 
+6. Create models for predicting zestimate 
+7. Communicate results using a jupyter notebook
+<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
+
+## Initial Hypotheses 
+- Influences of log error: 
+> - Hypothesis 1: County in which the property is located
+> - Hypothesis 2: The appraised tax value of a property 
+> - Hypothesis 3: The year when the property was built
+> - Hypothesis 4: Square footage of the property 
+<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
+
+## Instructions for Reproducability
+To be able to reproduce this project you must:
+1. have a wrangle_zillow.py and explore.py module
+2. have a env.py file with adequate credentials to download the zillow database, or you can download it [here](https://www.kaggle.com/c/zillow-prize-1) at Kaggle.
+3. Must have familiarity with and be able to use 
