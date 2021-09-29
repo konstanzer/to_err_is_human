@@ -13,9 +13,9 @@ PATH = "/content/drive/MyDrive/Colab Notebooks/clustering/data/"
 
 def wrangle_zillow(test_size, clip=True, thresh=.4, random_state=0, path=PATH):
     
-    #df = get_zillow_data()
+    df = get_zillow_data()
     #df.to_csv(path+"sup_2017.csv", index=False)
-    df = pd.read_csv(path+"sup_2017.csv", index_col='parcelid')
+    #df = pd.read_csv(path+"sup_2017.csv", index_col='parcelid')
     df = df.rename(columns={'calculatedfinishedsquarefeet':'finishedsqft',
                             'lotsizesquarefeet':'lotsqft',
                             'structuretaxvaluedollarcnt':'structuretaxvalue',
