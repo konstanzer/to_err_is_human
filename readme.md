@@ -62,7 +62,7 @@ Analyze: statistically and more generally (Python: statsmodels, numpy, scipy, sc
 
 Step 5: Model
 
-Create clusters that don't predict logerror and then discard them. Use price per square foot to make a lienar model that mimics the basline model, which is predicting the mean log error . See the noisy predictions that
+Create clusters that don't predict logerror and then discard them. Use price per square foot to make a linear model that mimics the basline model, then discard those noisy predictions and settle for predicting the mean log error on every property.
 
 Models used:
 
@@ -71,69 +71,19 @@ Models used:
 
 ## Hypotheses
 
-### H<sub>0</sub> There is no linear correlation between log error and square footage.
-
-### H<sub>1</sub> There is a linear correlation between log error and square footage. tenure.
-
-* Pearson correlation = 0.000
-* p-value             = 0.000
+Location (county and/or zip code) is driving log error.
+Finished square feet is driving log error.
+The ratio of building size to lot size is driving log error.
+Clusters based on latitude and longitude will identify coastal properties an these are driving log error.
+Properties with many outlying features are driving log error.
 
 ## Results
 
-| model | beep | boop | bop |
-| --- | --- | --- | --- |
-| baseline | .1 | 1 | .1 |
-| k-means | .1 | .1 | .1 |
+| model | RMSE | R^2
+| --- | --- | --- |
+| mean | .16 | 0 |
+| OLS linear regression | .16 | 0 |
 
-* I recommend we do better.
+## Recommendations
 
-
-
-### Deliverables
-1. Git hub repository with analysis and work
-2. Jupyter Notebook detailing analytical process and decisions
-<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
-
-## Data Dictionary
-| Variable     | Description                                       | Datatype |
-|--------------|---------------------------------------------------|----------|
-| parcelid     | unique identifier of parcels                      | int64    |
-| bathroom     | number of bathrooms                               | float64  |
-| bedroom      | number of bedrooms                                | float64  |
-| sqft         | square footage of the building                    | float64  |
-| latitude     | latitude coordinates of the building              | float64  |
-| longitude    | longitude coordinates of the building             | float64  |
-| lotsqft      | square footage of the lot of land of the property | float64  |
-| yearbuilt    | date of construction                              | float64  |
-| taxvalue     | appraised tax value of the property               | float64  |
-| landtaxvalue | tax value of the land                             | float64  |
-| taxamount    | Total amount of tax paid on the property          | float64  |
-| <strong>logerror*</strong>    | log error rate of the Zestimate of the property   | float64  |
-| landusedesc  | The type of property                              | object   |
-| county       | Name of the county the property is located in     | object   |
-    * : Target variable
-<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
-
-## Project Planning
-1. Create a Trello board for project management
-2. Import and explore the dataset
-4. Develop clusters for exploration
-    - Use 3 different combinations of featurescale data with appropriate scaler
-5. Scale data appropriately 
-6. Create models for predicting zestimate 
-7. Communicate results using a jupyter notebook
-<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
-
-## Initial Hypotheses 
-- Influences of log error: 
-> - Hypothesis 1: County in which the property is located
-> - Hypothesis 2: The appraised tax value of a property 
-> - Hypothesis 3: The year when the property was built
-> - Hypothesis 4: Square footage of the property 
-<hr style="border-top: 10px groove blue; margin-top: 1px; margin-bottom: 1px"></hr>
-
-## Instructions for Reproducability
-To be able to reproduce this project you must:
-1. have a wrangle_zillow.py and explore.py module
-2. have a env.py file with adequate credentials to download the zillow database, or you can download it [here](https://www.kaggle.com/c/zillow-prize-1) at Kaggle.
-3. Must have familiarity with and be able to use 
+Given the data available, I am confident in saying there are no significant drivers of the targer (log error), and that this is true for both the original features and new features derived from those. I am not surprised because the Zestimate is very accurate to begin with. I would investigate next why the model is making a few hundred huge errors in the training set that are doubling the median error. In the most extreme example, the model is predicting over $1 billion for a $6 million property (where the log error is over 5.)
