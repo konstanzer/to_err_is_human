@@ -38,7 +38,7 @@ According to the 2017 Zillow competition on Kaggle, real estate company Zillow u
 | 'structuretaxvaluedollarcnt'   | The assessed value of the built structure on the parcel                                                                |
 | 'landtaxvaluedollarcnt'        | The assessed value of the land area of the parcel                                                                      |
 | 'taxamount'                    | The total property tax assessed for that assessment year                                                               |
-The target variable is log error, which is the log of the Zestimate minus the log of the actual sale price. It's a clever way to deal with right-skewed, heteroskedastic home values because it makes errors relative to to home value. It also avoid the downfall of using percentage error which favors models with negative errors.
+| 'logerror'                     | The target variable is log error, which is the log of the Zestimate minus the log of the actual sale price. It's a clever way to deal with right-skewed, heteroskedastic home values because it makes error terms relative to to home value. It also avoid the downfall of using percentage error, which woud have favored models with negative errors. |
 
 ## Planning pipeline
 
@@ -71,11 +71,13 @@ Models used:
 
 ## Hypotheses
 
-Location (county and/or zip code) is driving log error.
-Finished square feet is driving log error.
-The ratio of building size to lot size is driving log error.
-Clusters based on latitude and longitude will identify coastal properties an these are driving log error.
-Properties with many outlying features are driving log error.
+* Location (county and/or zip code) is driving log error.
+* Finished square feet is driving log error.
+* The ratio of building size to lot size is driving log error.
+* Clusters based on latitude and longitude will identify coastal properties an these are driving log error.
+* Properties with many outlying features are driving log error.
+
+None of these hypotheses was correct.
 
 ## Results
 
