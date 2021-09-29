@@ -11,7 +11,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 PATH = "/content/drive/MyDrive/Colab Notebooks/clustering/data/"
 
 
-def wrangle_zillow(test_size, k=2.5, thresh=.4, random_state=0, path=PATH):
+def wrangle_zillow(test_size, clip=True, thresh=.4, random_state=0, path=PATH):
     
     #df = get_zillow_data()
     #df.to_csv(path+"sup_2017.csv", index=False)
@@ -21,10 +21,17 @@ def wrangle_zillow(test_size, k=2.5, thresh=.4, random_state=0, path=PATH):
                             'structuretaxvaluedollarcnt':'structuretaxvalue',
                             'taxvaluedollarcnt':'taxvalue',
                             'landtaxvaluedollarcnt':'landtaxvalue',
-                            'buildingqualitytypeid' : 'buildquality'})
+                            'buildingqualitytypeid' : 'buildquality',
+                            'heatingorsystemtypeid' : 'heating',
+                            'taxdelinquencyflag': 'delinquet'})
+                            
+    df.delinquet.replace("Y", 1, inplace=True)
+    df.heating = df.heating.map({20: 'Solar', 6: 'Forced air', 7: 'Floor', 2: 'Central'})
     
-    df.poolcnt.fillna(0, inplace=True)
+    df = zero_fill(df, ['delinquet','poolcnt', 'heating', 'regionidcity'])
     df = median_fill(df, ['buildquality', 'lotsqft'])
+    
+    df = drop_columns(df, thresh)
     print(f"\n{df.isna().any(axis=1).sum()} incomplete cases dropped from the data.")
     df = df.dropna()
     
@@ -38,15 +45,14 @@ def wrangle_zillow(test_size, k=2.5, thresh=.4, random_state=0, path=PATH):
     df['sqftvalue'] = df.structuretaxvalue/df.finishedsqft
     df['landsqftvalue'] = df.landtaxvalue/df.lotsqft
     
-    #df = iqr_method(df, k, ["taxrate", "taxvalue"])
-    #rather than drop outliers, I featurized them
-    df = outlying_X(df, k)
+    if clip==True:
+        df = percentile_method(df, ["logerror"])
     
     zips = pd.get_dummies(df.regionidzip).drop(columns=zip_ttests(df))
     df.fips = df.fips.map({6111:"Ventura", 6037:"Los Angeles", 6059:"Orange"})
-    df = pd.concat([df, pd.get_dummies(df.fips), zips], axis=1)
-    df = df.drop(columns=["fips", "regionidzip", "yearbuilt", "lotsqft",
-                            "taxamount", "landtaxvalue", "structuretaxvalue"])
+    df = pd.concat([df, pd.get_dummies(df.fips),
+                    pd.get_dummies(df.heating), zips], axis=1)
+    df = df.drop(columns=["fips", "heating", "regionidzip", "yearbuilt", "lotsqft", 0])
     
     return split_data(df, 'logerror', test_size, random_state)
 
@@ -69,19 +75,20 @@ def zip_ttests(X, alpha=.05):
     return insig_zips
     
     
-def iqr_method(df, k, cols):
+def percentile_method(df, cols):
     
-    was = len(df)
-    #drop row if column outside fences, k is usu. between 1.5 and 3
+    df_len = len(df)
+    
     for col in cols:
         
-        q1, q3 = df[col].quantile([.25,.75])
-        iqr = q3-q1
-        upperbound, lowerbound = q3 + k*iqr, q1 - k*iqr
-        #bool_mask = (df[col] < lowerbound) | (df[col] > upperbound)
-        df = df[(df[col] > lowerbound) & (df[col] < upperbound)]
+        ulimit = np.percentile(df[col], 99)
+        llimit = np.percentile(df[col], 1)
+        #df[col][df[col]>ulimit] = ulimit
+        #df[col][df[col]<llimit] = llimit
+        df = df[df[col]<ulimit]
+        df = df[df[col]>llimit]
     
-    print(f"\n{was-len(df)} outliers dropped based on {cols}.")
+    print(f"{df_len - len(df)} outliers clipped at 1st and 99th percentiles based on {cols}.")
     return df
 
 
@@ -106,8 +113,18 @@ def drop_columns(df, thresh):
     out = out[out['missing %'] > thresh]
     print("\nThese columns were dropped.")
     print(out)
+    
     return df.drop(columns=list(out.index))
 
+
+def zero_fill(df, cols):
+    
+    print(f"\nMissing values in {cols} replaced with zeros")
+    for col in cols:
+        df[col].fillna(0, inplace=True)
+        
+    return df
+    
 
 def median_fill(df, cols):
     
@@ -156,73 +173,3 @@ def calc_vif(X):
     vif["variables"] = X.columns
     vif["VIF"] = [round(variance_inflation_factor(X.values, i),1) for i in range(X.shape[1])]
     return(vif)
-
-
-def mean_absolute_percentage_error(y_true, y_pred,
-                                   sample_weight=None,
-                                   multioutput='uniform_average'):
-    """Mean absolute percentage error regression loss.
-    Note here that we do not represent the output as a percentage in range
-    [0, 100]. Instead, we represent it in range [0, 1/eps]. Read more in the
-    :ref:`User Guide <mean_absolute_percentage_error>`.
-    .. versionadded:: 0.24
-    Parameters
-    ----------
-    y_true : array-like of shape (n_samples,) or (n_samples, n_outputs)
-        Ground truth (correct) target values.
-    y_pred : array-like of shape (n_samples,) or (n_samples, n_outputs)
-        Estimated target values.
-    sample_weight : array-like of shape (n_samples,), default=None
-        Sample weights.
-    multioutput : {'raw_values', 'uniform_average'} or array-like
-        Defines aggregating of multiple output values.
-        Array-like value defines weights used to average errors.
-        If input is list then the shape must be (n_outputs,).
-        'raw_values' :
-            Returns a full set of errors in case of multioutput input.
-        'uniform_average' :
-            Errors of all outputs are averaged with uniform weight.
-    Returns
-    -------
-    loss : float or ndarray of floats in the range [0, 1/eps]
-        If multioutput is 'raw_values', then mean absolute percentage error
-        is returned for each output separately.
-        If multioutput is 'uniform_average' or an ndarray of weights, then the
-        weighted average of all output errors is returned.
-        MAPE output is non-negative floating point. The best value is 0.0.
-        But note the fact that bad predictions can lead to arbitarily large
-        MAPE values, especially if some y_true values are very close to zero.
-        Note that we return a large value instead of `inf` when y_true is zero.
-    Examples
-    --------
-    >>> from sklearn.metrics import mean_absolute_percentage_error
-    >>> y_true = [3, -0.5, 2, 7]
-    >>> y_pred = [2.5, 0.0, 2, 8]
-    >>> mean_absolute_percentage_error(y_true, y_pred)
-    0.3273...
-    >>> y_true = [[0.5, 1], [-1, 1], [7, -6]]
-    >>> y_pred = [[0, 2], [-1, 2], [8, -5]]
-    >>> mean_absolute_percentage_error(y_true, y_pred)
-    0.5515...
-    >>> mean_absolute_percentage_error(y_true, y_pred, multioutput=[0.3, 0.7])
-    0.6198...
-    """
-    
-    """
-    y_type, y_true, y_pred, multioutput = _check_reg_targets(
-        y_true, y_pred, multioutput)
-    check_consistent_length(y_true, y_pred, sample_weight)
-    """
-    
-    epsilon = np.finfo(np.float64).eps
-    mape = np.abs(y_pred - y_true) / np.maximum(np.abs(y_true), epsilon)
-    output_errors = np.average(mape,
-                               weights=sample_weight, axis=0)
-    if isinstance(multioutput, str):
-        if multioutput == 'raw_values':
-            return output_errors
-        elif multioutput == 'uniform_average':
-            # pass None as weights to np.average: uniform mean
-            multioutput = None
-
-    return np.average(output_errors, weights=multioutput)
